@@ -1,52 +1,66 @@
 using UnityEngine;
+using System;
 
-public class LevelManager : MonoBehaviour
+namespace Akadus.LevelSystem
 {
-    public int currentLevel = 1;
-    public int currentXP = 0;
-    public int maxXPForCurrentLevel = 100;
-
-    public static LevelManager instance;
-
-    private void Awake()
+    [System.Serializable]
+    public class LevelManager : MonoBehaviour
     {
-        if (instance == null)
-            instance = this;
-        else
-            Destroy(gameObject);
-    }
+        public static LevelManager instance;
 
-    public void AddXP(int amount)
-    {
-        currentXP += amount;
-        CheckForLevelUp();
-    }
+        public event Action OnXPAdded;
 
-    private void CheckForLevelUp()
-    {
-        if (currentXP >= maxXPForCurrentLevel)
+        [Header("Level Settings")]
+        [SerializeField] private float levelMultiplier = 1.1f;
+        [SerializeField] private int currentLevel = 1;
+        [SerializeField] private int currentXP = 0;
+        [SerializeField] private int maxXPForCurrentLevel = 100;
+
+        public int CurrentLevel => currentLevel;
+        public int CurrentXP => currentXP;
+        public int MaxXPForCurrentLevel => maxXPForCurrentLevel;
+
+        private void Awake()
         {
-            LevelUp();
+            if (instance == null)
+                instance = this;
+            else
+                Destroy(gameObject);
+
+            DontDestroyOnLoad(gameObject);
         }
-    }
 
-    private void LevelUp()
-    {
-        currentLevel++;
-        currentXP = 0;
-        UpdateMaxXPForCurrentLevel();
-        // Implement any other level-up logic
-    }
+        public void AddXP(int amount)
+        {
+            currentXP += amount;
+            CheckForLevelUp();
 
-    private void UpdateMaxXPForCurrentLevel()
-    {
-        // Adjust max XP for the next level as needed
-        maxXPForCurrentLevel = CalculateNextLevelXP(currentLevel);
-    }
+            // Trigger the OnXPAdded event
+            OnXPAdded?.Invoke();
+        }
 
-    public static int CalculateNextLevelXP(int currentLevel)
-    {
-        // You can modify this formula based on your game's needs
-        return Mathf.RoundToInt(100 * Mathf.Pow(1.1f, currentLevel));
+        private void CheckForLevelUp()
+        {
+            if (currentXP >= maxXPForCurrentLevel)
+            {
+                LevelUp();
+            }
+        }
+
+        private void LevelUp()
+        {
+            currentLevel++;
+            currentXP = 0;
+            maxXPForCurrentLevel = CalculateNextLevelXP(currentLevel);
+            OnXPAdded?.Invoke();
+
+            // Implement any other level-up logic
+        }
+
+        public int CalculateNextLevelXP(int currentLevel)
+        {
+            // You can modify this formula based on your game's needs
+            return Mathf.RoundToInt(100 * Mathf.Pow(1.1f, currentLevel));
+        }
     }
 }
